@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>不動産問い合わせフォーム</title>
+  <style>
+    body {
+      background: #f4f4f4;
+      font-family: 'Segoe UI', 'ヒラギノ角ゴ ProN', 'Hiragino Kaku Gothic ProN', 'メイリオ', Meiryo, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 420px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 32px 20px 24px 20px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.4rem;
+      margin-bottom: 24px;
+      color: #333;
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: #222;
+      font-size: 1rem;
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 10px 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+      box-sizing: border-box;
+      background: #fafafa;
+      transition: border 0.2s;
+    }
+    input[type="text"]:focus, select:focus {
+      border: 1.5px solid #4a90e2;
+      outline: none;
+      background: #fff;
+    }
+    .radio-group {
+      display: flex;
+      gap: 24px;
+      margin-top: 4px;
+    }
+    .radio-group label {
+      display: flex;
+      align-items: center;
+      font-size: 1rem;
+      margin-bottom: 0;
+      color: #333;
+    }
+    .radio-group input[type="radio"] {
+      margin-right: 6px;
+    }
+    button[type="submit"] {
+      width: 100%;
+      background: #4a90e2;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 0;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 10px;
+    }
+    button[type="submit"]:disabled {
+      background: #b0c4de;
+      cursor: not-allowed;
+    }
+    @media (max-width: 600px) {
+      .container {
+        margin: 16px 4px;
+        padding: 18px 6px 14px 6px;
+      }
+      h1 {
+        font-size: 1.1rem;
+      }
+    }
+    .thanks-message {
+      text-align: center;
+      font-size: 1.2rem;
+      color: #2d7a2d;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="form-container">
+    <h1>不動産問い合わせフォーム</h1>
+    <form id="inquiry-form" autocomplete="off">
+      <div class="form-group">
+        <label for="name">お名前</label>
+        <input type="text" id="name" name="name" required autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label for="age">年齢</label>
+        <select id="age" name="age" required>
+          <option value="" disabled selected>選択してください</option>
+          <option value="20代">20代</option>
+          <option value="30代">30代</option>
+          <option value="40代">40代</option>
+          <option value="50代">50代</option>
+          <option value="60代以上">60代以上</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="postcode">郵便番号</label>
+        <input type="text" id="postcode" name="postcode" maxlength="7" pattern="\d{7}" inputmode="numeric" required placeholder="例: 1234567">
+      </div>
+      <div class="form-group">
+        <label for="address">住所</label>
+        <input type="text" id="address" name="address" required autocomplete="address-level1">
+      </div>
+      <div class="form-group">
+        <label for="tel">電話番号</label>
+        <input type="text" id="tel" name="tel" required autocomplete="tel" placeholder="例: 09012345678">
+      </div>
+      <div class="form-group">
+        <label>物件情報</label>
+        <div class="radio-group">
+          <label><input type="radio" name="property" value="戸建て" required>戸建て</label>
+          <label><input type="radio" name="property" value="集合住宅">集合住宅</label>
+        </div>
+      </div>
+      <button type="submit" id="submit-btn">送信</button>
+    </form>
+  </div>
+  <div class="thanks-message" id="thanks-message" style="display:none;">
+    お問い合わせありがとうございました。
+  </div>
+  <script>
+    // Google Apps ScriptのWeb App URLをここに記載してください
+    const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzPRg-lsHWwN4CtFNHcN-2XgMcPJzjsw6yWKgE9MfkoTdSLfEFcJkOoPG89ITICwQCU7g/exec';
+
+    const postcodeInput = document.getElementById('postcode');
+    const addressInput = document.getElementById('address');
+    const submitBtn = document.getElementById('submit-btn');
+    const form = document.getElementById('inquiry-form');
+    const formContainer = document.getElementById('form-container');
+    const thanksMessage = document.getElementById('thanks-message');
+
+    let searching = false;
+
+    postcodeInput.addEventListener('input', function() {
+      const val = postcodeInput.value.replace(/\D/g, '');
+      postcodeInput.value = val;
+      if (val.length === 7 && !searching) {
+        searching = true;
+        submitBtn.disabled = true;
+        submitBtn.textContent = '検索中...';
+        fetch(`${GAS_WEBAPP_URL}?postcode=${val}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.address) {
+              addressInput.value = data.address;
+            } else {
+              addressInput.value = '';
+              alert('住所が見つかりませんでした。');
+            }
+          })
+          .catch(() => {
+            addressInput.value = '';
+            alert('住所検索中にエラーが発生しました。');
+          })
+          .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '送信';
+            searching = false;
+          });
+      }
+    });
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.textContent = '送信中...';
+
+      const formData = {
+        name: document.getElementById('name').value.trim(),
+        age: document.getElementById('age').value,
+        postcode: document.getElementById('postcode').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        tel: document.getElementById('tel').value.trim(),
+        property: form.querySelector('input[name="property"]:checked') ? form.querySelector('input[name="property"]:checked').value : ''
+      };
+
+      fetch(GAS_WEBAPP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+      .then(res => res.json())
+      .then(data => {
+        formContainer.style.display = 'none';
+        thanksMessage.style.display = 'block';
+      })
+      .catch(() => {
+        alert('送信中にエラーが発生しました。');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '送信';
+      });
+    });
+  </script>
+</body>
+</html>
